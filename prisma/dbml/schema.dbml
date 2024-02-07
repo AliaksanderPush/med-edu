@@ -1,0 +1,59 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table User {
+  id String [pk]
+  email String [unique, not null]
+  role UserRole [not null, default: 'STUDENT']
+  status UserStatus [not null, default: 'PENDING']
+  BlackList BlackList [not null]
+  UserInfo UserInfo
+}
+
+Table UserInfo {
+  id String [pk]
+  firstName String [not null]
+  lastName String [not null]
+  feedback Int [default: 0]
+  incompleteFeedback Int [default: 0]
+  invitedNumberOfStudents Int [default: 0]
+  user User [not null]
+  userId String [unique, not null]
+}
+
+Table Verification {
+  id String [pk]
+  email String
+  phone String
+  code Int [not null]
+  expirationDate DateTime [not null]
+}
+
+Table BlackList {
+  id String [pk]
+  User User [not null]
+  userId String [not null]
+}
+
+Table WhiteList {
+  id String [pk]
+  email String [unique, not null]
+}
+
+Enum UserRole {
+  DOCTOR
+  STUDENT
+  MANAGER
+  ADMIN
+}
+
+Enum UserStatus {
+  ACTIVE
+  PENDING
+  BLOCKED
+}
+
+Ref: UserInfo.userId - User.id
+
+Ref: BlackList.userId > User.id

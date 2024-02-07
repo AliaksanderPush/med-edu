@@ -1,0 +1,39 @@
+image: node:20.1
+
+stages:
+  - build
+  - lint
+
+variables:
+  NPM_CACHE_DIR: "$CI_PROJECT_DIR/.npm"
+
+cache:
+  key: "$CI_COMMIT_REF_NAME"
+  paths:
+    - "$NPM_CACHE_DIR/"
+
+build:
+  stage: build
+  script:
+    - npm ci --cache "$NPM_CACHE_DIR"
+    - npm install prisma
+    - npx prisma
+    - npx prisma generate
+    - npm run build
+  tags:
+    - ubuntu-medusa
+  only:
+    - merge_requests
+
+lint:
+  stage: lint
+  script:
+    - npm ci --cache "$NPM_CACHE_DIR"
+    - npm run check-lint
+    - npm run check-types
+  tags:
+    - ubuntu-medusa
+  dependencies: 
+    - build
+  only:
+    - merge_requests

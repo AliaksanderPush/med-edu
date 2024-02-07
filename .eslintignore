@@ -1,0 +1,11 @@
+node_modules
+.development.env
+.production.env
+.env
+.gitignore
+package-lock.json
+seeders
+dist
+data
+/test
+/generate-dbml.js

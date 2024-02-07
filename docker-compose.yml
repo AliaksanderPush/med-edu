@@ -1,0 +1,57 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:latest
+    ports:
+      - '5433:5432'
+    env_file:
+      - ./.env.production
+    environment:
+      POSTGRES_PASSWORD: root
+
+  prisma:
+    build:
+      context: .
+    command: ["npx", "prisma", "generate"]
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env.production
+    depends_on:
+      - postgres
+
+  nestjs-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '5000:5000'
+    env_file:
+      - ./.env.production
+    depends_on:
+      - migration
+    links:
+      - migration
+    command: ['npm', 'run', 'start']
+
+  migration:
+    build:
+      context: .
+    command:
+      [
+        './wait-for-it/wait-for-it.sh',
+        '--host:postgres',
+        '--port:5432',
+        '--',
+        'npm',
+        'run',
+        'migrate:prod',
+        '--name',
+        'initial',
+      ]
+    env_file:
+      - ./.env.production
+    links:
+      - postgres
+    depends_on:
+      - postgres

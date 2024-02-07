@@ -1,0 +1,76 @@
+name: Node.js CI/CD
+
+on:
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 20.1
+
+      - name: Cache Node modules
+        id: cache-modules
+        uses: actions/cache@v2
+        with:
+          path: ${{ runner.workspace }}/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install Prisma
+        run: npm install prisma
+
+      - name: Generate Prisma client
+        run: npx prisma
+        continue-on-error: true
+
+      - name: Generate Prisma
+        run: npx prisma generate
+
+      - name: Build
+        run: npm run build
+
+  lint:
+    runs-on: ubuntu-latest
+
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 20.1
+
+      - name: Restore Node modules cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ runner.workspace }}/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Generate Prisma client
+        run: npx prisma
+        continue-on-error: true
+
+      - name: Generate Prisma
+        run: npx prisma generate
+
+      - name: Check linting
+        run: |
+          npm install
+          npm run check-lint
+
+      - name: Check types
+        run: npm run check-types

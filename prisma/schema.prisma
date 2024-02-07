@@ -1,0 +1,197 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+ 
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  userInfo           UserInfo?
+  role               Role                @default(STUDENT)
+  email              String              @unique
+  password           String
+  feedBack           FeedBack[]
+  status             UserStatus           @default(ACTIVE)
+  invaitedstatus     ManagerSlotStatus    @default(NOTACCEPTED) 
+  token              Token?
+  unansweredSessions IncompleteFeedback[]
+  sessions           Session[]
+  slots              Slot[]
+  slotUsers          SlotUsers[]
+  managerslot        ManagerSlot?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@map("users")
+}
+
+model Token {
+  id           String @id @default(cuid())
+  userId       String @unique
+  user         User   @relation(fields: [userId], references: [id])
+  refreshToken String
+
+  @@map("tokens")
+}
+
+
+model ManagerSlot {
+  id          String            @id @default(cuid())
+  limit       Int               @default(0)
+  count       Int               @default(0)
+  userId      String            @unique
+  user        User   @relation(fields: [userId], references: [id])
+  slotUsers   SlotUsers?
+  
+}
+
+model SlotUsers {
+  id                 String        @id @default(cuid())
+  managerSlotId      String?       @unique
+  managerSlot        ManagerSlot?  @relation(fields: [managerSlotId], references: [id])
+  users              User[]         
+}
+
+
+
+model Verification {
+  id             String   @id @default(cuid())
+  code           String
+  isVerify       Boolean  @default(false)
+  role           Role
+  email          String   @unique
+  expirationDate DateTime
+
+  @@map("verification")
+}
+
+model UserInfo {
+  id            String  @id @default(cuid())
+  firstName     String
+  lastName      String
+  hospital      String
+  department    String?
+  incomeFeedBacks Int? 
+  feedBacks     Int? 
+  university    String?
+  numOfStud     Int?    
+  grade         String?
+  yearGroup     String?
+  userId        String  @unique
+  user          User    @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  @@map("userinfo")
+}
+
+model IncompleteFeedback {
+  id              String @id @default(cuid())
+  expirationDate  DateTime
+  userId          String 
+  user   User     @relation(fields: [userId], references: [id],onDelete: Cascade )
+
+  @@map("IncompleteFeedbacks")
+}
+
+model FeedBack {
+  id         String    @id @default(cuid())
+  userId     String   
+  user       User      @relation(fields: [userId], references: [id])
+  answer     Answer[]  
+  sessionId  String   
+  session    Session?  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  @@map("feedbacks")
+}
+
+model Answer {
+ id          String    @id @default(cuid())
+ answerStr   String?
+ answerBool  Boolean?
+ answerNum   Int?
+ questionId  String
+ feedBackId  String 
+ feedBack    FeedBack?   @relation(fields: [feedBackId], references: [id], onDelete: Cascade)
+ question    Question?   @relation(fields: [questionId], references: [id]) 
+ createdAt   DateTime    @default(now())
+  @@map("answer")
+}
+
+ model Question {
+ id          String             @id @default(cuid())
+ type        QuestionFieldType  @default(STRING)
+ answers     Answer[]          
+ question    String 
+ @@map("quastion")
+ }
+
+model Session  {
+  id            String           @id @default(cuid())
+  title         String
+  departmen     String
+  doctorName    String
+  description   String
+  startDate     DateTime
+  location      String
+  duration      Int               @default(0)
+  feedBacs      FeedBack[]
+  slot          Slot?
+  status        SessionStatus     @default(AVAILABLE) 
+  autorId       String          
+  autor         User              @relation(fields: [autorId], references: [id], onDelete: Cascade)
+
+
+  @@map("sessions")
+}
+
+model Slot {
+  id          String     @id @default(cuid())
+  limit       Int        @default(0)
+  count       Int        @default(0)
+  users       User[]
+  status      SlotStatus @default(ACCEPTED)  
+  sessionId   String     @unique
+  session     Session    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("slots")
+}
+
+enum Role {
+  MANAGER
+  ADMIN
+  STUDENT
+  DOCTOR
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum SessionStatus {
+  AVAILABLE
+  COMPLETED
+}
+
+enum SlotStatus {
+  ACCEPTED
+  NOTACCEPTED  
+}
+
+enum ManagerSlotStatus {
+  ACCEPTED
+  NOTACCEPTED
+  PENDING  
+}
+ 
+
+enum QuestionFieldType {
+  BOOLEAN
+  NUMBER
+  STRING
+}
